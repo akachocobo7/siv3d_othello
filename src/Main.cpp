@@ -36,23 +36,160 @@ public:
         return a;
     }
     
-    bool putStone(int y, int x){
-        if(x < 0 || x >= 8 || y < 0 || y >= 8) return false;
-        
+    // posで指定した場所に石を置き、revで指定した場所の石をひっくり返す
+    void putStone(const int64 pos, const int64 rev){
         if(black_turn){
-            int64 bit = 1LL << ((8 * (7 - y)) + (7 - x));
-            if(white_board & bit) return false;
-            black_board |= bit;
+            black_board ^= pos | rev;
+            white_board ^= rev;
         }
         else{
-            int64 bit = 1LL << ((8 * (7 - y)) + (7 - x));
-            if(black_board & bit) return false;
-            white_board |= bit;
+            white_board ^= pos | rev;
+            black_board ^= rev;
         }
-        
+
         black_turn = !black_turn;
-        
-        return true;
+    }
+    
+    // posの場所に石を置いて、石が返った位置のbitを立てて返す
+    int64 canPut(const int64 pos){
+        if((black_board | white_board) & pos) return 0; //着手箇所が空白でない場合
+
+
+        int64 rev = 0, r, mask;
+
+        if(black_turn){     // 黒が打つ場合
+            r = 0;
+            mask = (pos >> 1) & 0x7f7f7f7f7f7f7f7f; //右方向へ返せるかを調べる
+            while(mask != 0 && (mask & white_board) != 0){ //白石が連続する間
+                r |= mask;
+                mask = (mask >> 1) & 0x7f7f7f7f7f7f7f7f;
+            }
+            if(mask & black_board) rev |= r; //黒石があれば返す位置を確定する
+
+            r = 0;
+            mask = (pos >> 8) & 0x00ffffffffffffff; //下方向へ返せるかを調べる
+            while(mask != 0 && (mask & white_board) != 0){
+                r |= mask;
+                mask = (mask >> 8) & 0x00ffffffffffffff;
+            }
+            if(mask & black_board) rev |= r;
+
+            r = 0;
+            mask = (pos << 1) & 0xfefefefefefefefe; //左方向へ返せるかを調べる
+            while(mask != 0 && (mask & white_board) != 0){
+                r |= mask;
+                mask = (mask << 1) & 0xfefefefefefefefe;
+            }
+            if(mask & black_board) rev |= r;
+
+            r = 0;
+            mask = (pos << 8) & 0xffffffffffffff00; //上方向へ返せるかを調べる
+            while(mask != 0 && (mask & white_board) != 0){
+                r |= mask;
+                mask = (mask << 8) & 0xffffffffffffff00;
+            }
+            if(mask & black_board) rev |= r;
+
+            r = 0;
+            mask = (pos >> 9) & 0x007f7f7f7f7f7f7f; //右下方向へ返せるかを調べる
+            while(mask != 0 && (mask & white_board) != 0){
+                r |= mask;
+                mask = (mask >> 9) & 0x007f7f7f7f7f7f7f;
+            }
+            if(mask & black_board) rev |= r;
+
+            r = 0;
+            mask = (pos >> 7) & 0x00fefefefefefefe; //左下方向へ返せるかを調べる
+            while(mask != 0 && (mask & white_board) != 0){
+                r |= mask;
+                mask = (mask >> 7) & 0x00fefefefefefefe;
+            }
+            if(mask & black_board) rev |= r;
+
+            r = 0;
+            mask = (pos << 9) & 0xfefefefefefefe00; //左上方向へ返せるかを調べる
+            while(mask != 0 && (mask & white_board) != 0){
+                r |= mask;
+                mask = (mask << 9) & 0xfefefefefefefe00;
+            }
+            if(mask & black_board) rev |= r;
+
+            r = 0;
+            mask = (pos << 7) & 0x7f7f7f7f7f7f7f00; //右上方向へ返せるかを調べる
+            while(mask != 0 && (mask & white_board) != 0){
+                r |= mask;
+                mask = (mask << 7) & 0x7f7f7f7f7f7f7f00;
+            }
+            if(mask & black_board) rev |= r;
+        }
+        else{       // 白が打つ場合
+            r = 0;
+            mask = (pos >> 1) & 0x7f7f7f7f7f7f7f7f; //右方向へ返せるかを調べる
+            while(mask != 0 && (mask & black_board) != 0){ //黒石が連続する間
+                r |= mask;
+                mask = (mask >> 1) & 0x7f7f7f7f7f7f7f7f;
+            }
+            if(mask & white_board) rev |= r; //白石があれば返す位置を確定する
+
+            r = 0;
+            mask = (pos >> 8) & 0x00ffffffffffffff; //下方向へ返せるかを調べる
+            while(mask != 0 && (mask & black_board) != 0){
+                r |= mask;
+                mask = (mask >> 8) & 0x00ffffffffffffff;
+            }
+            if(mask & white_board) rev |= r;
+            
+            r = 0;
+            mask = (pos << 1) & 0xfefefefefefefefe; //左方向へ返せるかを調べる
+            while(mask != 0 && (mask & black_board) != 0){
+                r |= mask;
+                mask = (mask << 1) & 0xfefefefefefefefe;
+            }
+            if(mask & white_board) rev |= r;
+
+            r = 0;
+            mask = (pos << 8) & 0xffffffffffffff00; //上方向へ返せるかを調べる
+            while(mask != 0 && (mask & black_board) != 0){
+                r |= mask;
+                mask = (mask << 8) & 0xffffffffffffff00;
+            }
+            if(mask & white_board) rev |= r;
+
+            r = 0;
+            mask = (pos >> 9) & 0x007f7f7f7f7f7f7f; //右下方向へ返せるかを調べる
+            while(mask != 0 && (mask & black_board) != 0){
+                r |= mask;
+                mask = (mask >> 9) & 0x007f7f7f7f7f7f7f;
+            }
+            if(mask & white_board) rev |= r;
+
+            r = 0;
+            mask = (pos >> 7) & 0x00fefefefefefefe; //左下方向へ返せるかを調べる
+            while(mask != 0 && (mask & black_board) != 0){
+                r |= mask;
+                mask = (mask >> 7) & 0x00fefefefefefefe;
+            }
+            if(mask & white_board) rev |= r;
+
+            r = 0;
+            mask = (pos << 9) & 0xfefefefefefefe00; //左上方向へ返せるかを調べる
+            while(mask != 0 && (mask & black_board) != 0){
+                r |= mask;
+                mask = (mask << 9) & 0xfefefefefefefe00;
+            }
+            if(mask & white_board) rev |= r;
+
+            r = 0;
+            mask = (pos << 7) & 0x7f7f7f7f7f7f7f00; //右上方向へ返せるかを調べる
+            while (mask != 0 && (mask & black_board) != 0){
+                r |= mask;
+                mask = (mask << 7) & 0x7f7f7f7f7f7f7f00;
+            }
+            if(mask & white_board) rev |= r;
+        }
+
+        return rev;
+
     }
 };
 
@@ -81,6 +218,11 @@ void showBoard(OthelloGame &othello){
     }
 }
 
+// (y, x) を bitに変換
+int64 vec2bit(int y, int x){
+    return 1LL << ((8 * (7 - y)) + (7 - x));
+}
+
 int_main() {
     Scene::SetBackground(Palette::Pink);
     
@@ -91,10 +233,15 @@ int_main() {
         
         if(MouseL.down()){
             Vec2 cur_pos = Cursor::Pos();
-            if(cur_pos.x < left_board_pos || cur_pos.y < top_board_pos) break;
+            if(cur_pos.x < left_board_pos || cur_pos.y < top_board_pos) continue;
             int x = (cur_pos.x - left_board_pos) / cell_width;
             int y = (cur_pos.y - top_board_pos) / cell_width;
-            othello.putStone(y, x);
+            if(x < 0 || x >= 8 || y < 0 || y >= 8) continue;
+            
+            int64 pos = vec2bit(y, x);
+            if(int64 rev = othello.canPut(pos)){
+                othello.putStone(pos, rev);
+            }
         }
     }
 }
