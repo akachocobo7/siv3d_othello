@@ -12,9 +12,10 @@ constexpr const int BLACK_STONE = 1;
 constexpr const int WHITE_STONE = -1;
 
 class OthelloGame{
+
 private:
     const int SEARCH_LV = 5;
-    const int FINAL_STAGE_NUM = 47;
+    const int FINAL_STAGE_NUM = 51;
     const int64 VALUE_PLACE[64] = {
         150, -10, 10,  5,  5, 10, -10, 150,
         -10,-200,  2,  1,  1,  2,-200, -10,
@@ -29,33 +30,8 @@ private:
     
     int64 black_board, white_board;
     bool black_turn;
-    bool isAIcolorWhite = true;
+    bool isAIcolorWhite;
     
-public:
-    OthelloGame() : black_board(0x0000000810000000),
-                    white_board(0x0000001008000000),
-                    black_turn(true) {}
-    
-    Array<Array<int>> getBorad(){
-        Array<Array<int>> a(8, Array<int>(8));
-        
-        for(int i = 0; i < 64; i++){
-            if(black_board & (1LL << i)){
-                a[7 - (i / 8)][7 - (i % 8)] = BLACK_STONE;
-            }
-            if(white_board & (1LL << i)){
-                a[7 - (i / 8)][7 - (i % 8)] = WHITE_STONE;
-            }
-        }
-        
-        return a;
-    }
-    
-    void init(){
-        black_board = 0x0000000810000000;
-        white_board = 0x0000001008000000;
-        black_turn = true;
-    }
     
     // posで指定した場所に石を置き、revで指定した場所の石をひっくり返す
     void revStone(const int64 pos, const int64 rev){
@@ -226,69 +202,8 @@ public:
         return rev;
     }
     
-    // (y, x) を bit座標に変換
-    int64 vec2bit(int y, int x){
-        return 1LL << ((8 * (7 - y)) + (7 - x));
-    }
-    
-    // bit座標を (y, x) に変換
-    Vec2 bit2vec(int64 bit){
-        for(int i = 0; i < 64; i++){
-            if(bit & (1LL << (63 - i))){
-                return Vec2(i % 8, i / 8);
-            }
-        }
-        return Vec2(-1, -1);
-    }
-
-    // (y, x) に石を置く、置けた場合はtrueを返す
-    bool putStone(const int y, const int x){
-        const int64 pos = vec2bit(y, x);
-        if(const int64 rev = canPut(pos); rev != 0){
-            revStone(pos, rev);
-            return true;
-        }
-        
-        return false;
-    }
-    
-    // AIが石を置く。置いた石の座標 (y, x) を返す
-    Vec2 AI(){
-        // 打てないならパス
-        bool pass = true;
-        for (int64 bit = 0x8000000000000000; bit != 0; bit = (bit >> 1) & 0x7fffffffffffffff) {
-            if (canPut(bit)){
-                pass = false;
-                break;
-            }
-        }
-        if(pass){
-            black_turn = !black_turn;
-            return Vec2(-1, -1);
-        }
-        
-        for(bool again = true; /* 相手がパスならtrue */ again; ){
-            again = false;
-            
-            int stone_sum = countStone(BLACK_STONE) + countStone(WHITE_STONE);
-            if(stone_sum >= 64) return Vec2(-1, -1);
-            int64 pos = negaMax(std::min(SEARCH_LV, 64 - stone_sum), true, -INF, INF);
-            int64 rev = canPut(pos);
-            revStone(pos, rev);
-            
-            // 相手が打てないならもう一度AIのターン
-            for(int64 bit = 0x8000000000000000; bit != 0; bit = (bit >> 1) & 0x7fffffffffffffff){
-                if(canPut(bit)) return bit2vec(pos);
-            }
-            black_turn = !black_turn;
-            again = true;
-        }
-        
-        return Vec2(-1, -1);
-    }
-    
     int64 negaMax(const int64 depth, const bool is_before_put, const int64 alpha, const int64 beta, bool first_hand = true){
-        if (depth == 0) return -boardValue();
+        if(depth == 0) return -boardValue();
 
         int64 max_value = alpha;
         bool is_put = false;
@@ -309,7 +224,7 @@ public:
             }
         }
 
-        if(is_put) {
+        if(is_put){
             if(first_hand) return best_pos;
             return max_value;
         }
@@ -343,24 +258,19 @@ public:
         return value;
     }
     
-    // 黒(または白)石の数を数える
-    int countStone(const int stone){
-        return __builtin_popcountll((stone == BLACK_STONE) ? black_board : white_board);
-    }
-    
     // オセロの石の位置によって価値を計算
-    int64 valueStonePlace() {
+    int64 valueStonePlace(){
         int64 value = 0, c = 0;
 
-        if(isAIcolorWhite) {
+        if(isAIcolorWhite){
             if(countStone(WHITE_STONE) >= 1) c = 0;  // 全滅対策
             else if(countStone(BLACK_STONE) == 0) c = -50000;    // 相手を全滅させたら評価値大アップ
             else c = 50000;
         }
-        else {
+        else{
             if(countStone(BLACK_STONE) >= 1) c = 0;
-            else if(countStone(WHITE_STONE) == 0) c = 50000;
-            else c = -50000;
+            else if(countStone(WHITE_STONE) == 0) c = -50000;
+            else c = 50000;
         }
 
         int64 b = black_board, w = white_board;
@@ -499,7 +409,107 @@ public:
 
         return -value;
     }
+    
+public:
+    OthelloGame(bool isAIcolorWhite = true) : black_board(0x0000000810000000),
+                    white_board(0x0000001008000000),
+                    black_turn(true),
+                    isAIcolorWhite(isAIcolorWhite) {}
+    
+    Array<Array<int>> getBorad(){
+        Array<Array<int>> a(8, Array<int>(8));
+        
+        for(int i = 0; i < 64; i++){
+            if(black_board & (1LL << i)){
+                a[7 - (i / 8)][7 - (i % 8)] = BLACK_STONE;
+            }
+            if(white_board & (1LL << i)){
+                a[7 - (i / 8)][7 - (i % 8)] = WHITE_STONE;
+            }
+        }
+        
+        return a;
+    }
+    
+    void init(bool isAIcolorWhite = true){
+        black_board = 0x0000000810000000;
+        white_board = 0x0000001008000000;
+        black_turn = true;
+        this->isAIcolorWhite = isAIcolorWhite;
+    }
+    
+    // (y, x) を bit座標に変換
+    int64 vec2bit(int y, int x){
+        return 1LL << ((8 * (7 - y)) + (7 - x));
+    }
+    
+    // bit座標を (y, x) に変換
+    Vec2 bit2vec(int64 bit){
+        for(int i = 0; i < 64; i++){
+            if(bit & (1LL << (63 - i))){
+                return Vec2(i % 8, i / 8);
+            }
+        }
+        return Vec2(-1, -1);
+    }
+    
+    // 黒(または白)石の数を数える
+    int countStone(const int stone){
+        return __builtin_popcountll((stone == BLACK_STONE) ? black_board : white_board);
+    }
 
+    // (y, x) に石を置く、置けた場合はtrueを返す
+    bool putStone(const int y, const int x){
+        const int64 pos = vec2bit(y, x);
+        if(const int64 rev = canPut(pos); rev != 0){
+            revStone(pos, rev);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // AIが石を置く。置いた石の座標 (y, x) を返す
+    Vec2 AI(){
+        Vec2 res(-1, -1);
+        for(bool again = true; /* 相手がパスならtrue */ again; ){
+            again = false;
+            
+            // 打てないならパス
+            bool pass = true;
+            for(int64 bit = 0x8000000000000000; bit != 0; bit = (bit >> 1) & 0x7fffffffffffffff){
+                if(canPut(bit)){
+                    pass = false;
+                    break;
+                }
+            }
+            if(pass){
+                black_turn = !black_turn;
+                return res;
+            }
+            
+            int stone_sum = countStone(BLACK_STONE) + countStone(WHITE_STONE);
+            if(stone_sum >= 64) return res;
+            int64 pos = negaMax(stone_sum >= FINAL_STAGE_NUM ? 64 - stone_sum : SEARCH_LV, true, -INF, INF);
+            int64 rev = canPut(pos);
+            revStone(pos, rev);
+            
+            res = bit2vec(pos);
+            
+            // 相手が打てないならもう一度AIのターン
+            for(int64 bit = 0x8000000000000000; bit != 0; bit = (bit >> 1) & 0x7fffffffffffffff){
+                if(canPut(bit)) return res;
+            }
+            black_turn = !black_turn;
+            again = true;
+        }
+        
+        return res;
+    }
+
+    bool canPut(int y, int x){
+        return canPut(vec2bit(y, x)) != 0;
+    }
 };
 
 void showBoard(OthelloGame &othello, Vec2 put_pos){
@@ -532,20 +542,67 @@ void showBoard(OthelloGame &othello, Vec2 put_pos){
     }
 }
 
+// ゲームが終わるときの処理(まだ終わっていなかったら何もしない)
+bool gameOver(OthelloGame &othello, const Font &font){
+    // プレイヤーもAIも打てないなら終わり
+    for(int y = 0; y < 8; y++){
+        for(int x = 0; x < 8; x++){
+            if(othello.canPut(y, x)){
+                return false;
+            }
+        }
+    }
+    
+    int black_num = othello.countStone(BLACK_STONE);
+    int white_num = othello.countStone(WHITE_STONE);
+    
+    if(black_num > white_num){
+        font(U"くろのかち！").draw(580, 200, Palette::Black);
+    }
+    else if(black_num < white_num){
+        font(U"しろのかち！").draw(580, 200, Palette::Black);
+    }
+    else{
+        font(U"ひきわけ！").draw(590, 200, Palette::Black);
+    }
+    
+    return true;
+}
+
 
 int_main() {
+    // ウィンドウを手動リサイズ可能にする
+    Window::SetStyle(WindowStyle::Sizable);
+    
+    Window::SetTitle(U"othello");
+    
     Scene::SetBackground(Palette::Pink);
+    
+    const Font font(32, Typeface::Bold); // サイズ32の太いフォントを生成
     
     OthelloGame othello;
     
     while (System::Update()) {
         static Vec2 put_pos(-1, -1);
+        static bool turn_AI = false;
         showBoard(othello, put_pos);
         
-        if(SimpleGUI::Button(U"リセット", Vec2(600, 500))){
+        if(SimpleGUI::Button(U"くろ", Vec2(600, 400), 150)){
             othello.init();
             put_pos = {-1, -1};
         }
+        if(SimpleGUI::Button(U"しろ", Vec2(600, 500), 150)){
+            othello.init(false);
+            put_pos = {-1, -1};
+            turn_AI = true;
+        }
+        
+        if(turn_AI){
+            put_pos = othello.AI();
+            turn_AI = false;
+        }
+        
+        gameOver(othello, font);
         
         if(MouseL.down()){
             Vec2 cur_pos = Cursor::Pos();
@@ -556,8 +613,8 @@ int_main() {
             
             if(othello.putStone(y, x)){
                 put_pos = {x, y};
+                turn_AI = true;
                 showBoard(othello, put_pos);
-                put_pos = othello.AI();
             }
         }
     }
