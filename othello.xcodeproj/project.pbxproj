@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1B62D42C244B62FA00D26C11 /* sound in Resources */ = {isa = PBXBuildFile; fileRef = 1B62D42B244B62F900D26C11 /* sound */; };
+		1B62D42E244B630100D26C11 /* picture in Resources */ = {isa = PBXBuildFile; fileRef = 1B62D42D244B630100D26C11 /* picture */; };
 		2C17789A1CE0AA7C00BB8AD0 /* Main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1778991CE0AA7C00BB8AD0 /* Main.cpp */; };
 		2C1778A31CE0B65500BB8AD0 /* icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 2C1778A21CE0B65500BB8AD0 /* icon.icns */; };
 		2C34116722D8ACA4002ADA30 /* libogg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C34116622D8ACA4002ADA30 /* libogg.a */; };
@@ -41,6 +43,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1B62D42B244B62F900D26C11 /* sound */ = {isa = PBXFileReference; lastKnownFileType = folder; name = sound; path = App/sound; sourceTree = "<group>"; };
+		1B62D42D244B630100D26C11 /* picture */ = {isa = PBXFileReference; lastKnownFileType = folder; name = picture; path = App/picture; sourceTree = "<group>"; };
 		2C1778841CE0A9EA00BB8AD0 /* othello.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = othello.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2C1778921CE0A9EA00BB8AD0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2C1778991CE0AA7C00BB8AD0 /* Main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Main.cpp; sourceTree = "<group>"; };
@@ -118,6 +122,8 @@
 		2C1778791CE0A9D800BB8AD0 = {
 			isa = PBXGroup;
 			children = (
+				1B62D42D244B630100D26C11 /* picture */,
+				1B62D42B244B62F900D26C11 /* sound */,
 				2C6906D72298140F00A427D0 /* engine */,
 				2C1778921CE0A9EA00BB8AD0 /* Info.plist */,
 				2C1778A21CE0B65500BB8AD0 /* icon.icns */,
@@ -234,8 +240,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1B62D42C244B62FA00D26C11 /* sound in Resources */,
 				2C6906D82298140F00A427D0 /* engine in Resources */,
 				2C1778A31CE0B65500BB8AD0 /* icon.icns in Resources */,
+				1B62D42E244B630100D26C11 /* picture in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

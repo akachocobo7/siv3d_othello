@@ -542,8 +542,8 @@ void showBoard(OthelloGame &othello, Vec2 put_pos){
     }
 }
 
-// ゲームが終わるときの処理(まだ終わっていなかったら何もしない)
-bool gameOver(OthelloGame &othello, const Font &font){
+// ゲームが終わっているかどうか
+bool isGameOver(OthelloGame &othello){
     // プレイヤーもAIも打てないなら終わり
     for(int y = 0; y < 8; y++){
         for(int x = 0; x < 8; x++){
@@ -551,19 +551,6 @@ bool gameOver(OthelloGame &othello, const Font &font){
                 return false;
             }
         }
-    }
-    
-    int black_num = othello.countStone(BLACK_STONE);
-    int white_num = othello.countStone(WHITE_STONE);
-    
-    if(black_num > white_num){
-        font(U"くろのかち！").draw(580, 200, Palette::Black);
-    }
-    else if(black_num < white_num){
-        font(U"しろのかち！").draw(580, 200, Palette::Black);
-    }
-    else{
-        font(U"ひきわけ！").draw(590, 200, Palette::Black);
     }
     
     return true;
@@ -579,42 +566,105 @@ int_main() {
     Scene::SetBackground(Palette::Pink);
     
     const Font font(32, Typeface::Bold); // サイズ32の太いフォントを生成
+    const Font title_font(80);
+    
+    const Audio bgm(Resource(U"sound/PositiveHappy.mp3"));
+    const Audio put_sound(Resource(U"sound/put.mp3"));
+    const Audio title_sound(Resource(U"sound/title.mp3"));
+    const Audio start_sound(Resource(U"sound/start.mp3"));
+    const Audio gameover_sound(Resource(U"sound/end.mp3"));
+    
+    double volume = 0.0;
+    bgm.setVolume(volume);
+    
+    const Texture othello_picture(Resource(U"picture/othello_game.png"));
     
     OthelloGame othello;
     
     while (System::Update()) {
+        static bool titleScene = true;
         static Vec2 put_pos(-1, -1);
         static bool turn_AI = false;
-        showBoard(othello, put_pos);
         
-        if(SimpleGUI::Button(U"くろ", Vec2(600, 400), 150)){
+        // 右側のメニュー
+        if(SimpleGUI::Button(U"タイトル", Vec2(600, 250), 150)){
+            bgm.stop();
+            titleScene = true;
+            title_sound.playOneShot();
+        }
+        if(SimpleGUI::Button(U"くろ", Vec2(600, 350), 150)){
             othello.init();
             put_pos = {-1, -1};
+            bgm.play();
+            titleScene = false;
+            start_sound.playOneShot();
         }
-        if(SimpleGUI::Button(U"しろ", Vec2(600, 500), 150)){
+        if(SimpleGUI::Button(U"しろ", Vec2(600, 420), 150)){
             othello.init(false);
             put_pos = {-1, -1};
             turn_AI = true;
+            bgm.play();
+            titleScene = false;
+            start_sound.playOneShot();
         }
         
-        if(turn_AI){
-            put_pos = othello.AI();
-            turn_AI = false;
+        // 音量調整
+        if(SimpleGUI::Slider((volume > 0.0? U"BGM🔔" : U"BGM🔕"), volume, Vec2(50, 545))){
+            bgm.setVolume(volume);
         }
         
-        gameOver(othello, font);
-        
-        if(MouseL.down()){
-            Vec2 cur_pos = Cursor::Pos();
-            if(cur_pos.x < left_board_pos || cur_pos.y < top_board_pos) continue;
-            int x = (cur_pos.x - left_board_pos) / cell_width;
-            int y = (cur_pos.y - top_board_pos) / cell_width;
-            if(x < 0 || x >= 8 || y < 0 || y >= 8) continue;
+        if(titleScene){
+            title_font(U"オ セ ロ").draw(130, 100, Palette::Green);
+            font(U"※効果音出ます").draw(260, 545, Palette::Black);
             
-            if(othello.putStone(y, x)){
-                put_pos = {x, y};
-                turn_AI = true;
-                showBoard(othello, put_pos);
+            othello_picture.scaled(0.3).draw(150, 250);
+        }
+        else{
+            showBoard(othello, put_pos);
+            
+            if(turn_AI){
+                put_pos = othello.AI();
+                turn_AI = false;
+                put_sound.playOneShot();
+            }
+            
+            static bool sound_played = false; // 効果音を一回だけ鳴らす用のフラグ
+            if(bool game_over = isGameOver(othello); game_over){
+                int black_num = othello.countStone(BLACK_STONE);
+                int white_num = othello.countStone(WHITE_STONE);
+                
+                if(black_num > white_num){
+                    font(U"くろのかち！").draw(580, 200, Palette::Black);
+                }
+                else if(black_num < white_num){
+                    font(U"しろのかち！").draw(580, 200, Palette::White);
+                }
+                else{
+                    font(U"ひきわけ！").draw(590, 200, Palette::Green);
+                }
+                
+                if(!sound_played){
+                    gameover_sound.playOneShot();
+                    sound_played = true;
+                }
+            }
+            else{
+                sound_played = false;
+            }
+            
+            if(MouseL.down()){
+                Vec2 cur_pos = Cursor::Pos();
+                if(cur_pos.x < left_board_pos || cur_pos.y < top_board_pos) continue;
+                int x = (cur_pos.x - left_board_pos) / cell_width;
+                int y = (cur_pos.y - top_board_pos) / cell_width;
+                if(x < 0 || x >= 8 || y < 0 || y >= 8) continue;
+                
+                if(othello.putStone(y, x)){
+                    put_pos = {x, y};
+                    turn_AI = true;
+                    showBoard(othello, put_pos);
+                    put_sound.playOneShot();
+                }
             }
         }
     }
